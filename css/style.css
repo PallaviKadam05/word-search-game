@@ -1,69 +1,74 @@
-  /* CSS  */
+/* CSS  */
 body, h1 {
   margin: 0;
   padding: 0;
   color: #333;
+  -moz-user-select: -moz-none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-outline-style: none;
 }
+
 h1 {
   text-transform: uppercase;
 }
-/* Common */
-.fix {
-  *zoom: 1;
-}
-.fix:after {
-  display: table;
-  clear: both;
-  content: '';
-}
-/* Home */
-.wrap {
+
+/* Game view */
+.word-search-container {
   width: 960px;
   margin: 0 auto;
   padding: 40px 0;
   text-align: center;
-  position:relative;
+  position: relative;
+  outline: 0;
 }
-.logo, #gameArea {
+
+.title, #gameArea {
   margin-bottom: 40px;
 }
-.ws-area, .ws-words {
+
+.section, .hints {
   display: inline-block;
   vertical-align: top;
 }
-.ws-words {
+
+.hints {
   margin-left: 20px;
   text-align: left;
 }
-.ws-word {
+
+.hint {
   margin-bottom: 4px;
 }
-.ws-words ::first-letter{
-	text-transform : capitalize;
+
+.hints ::first-letter{
+  text-transform: capitalize;
 }
+
 /* Wordsearch */
-.ws-area {
+.section {
   background: #fafafa;
   display: inline-block;
   padding: 20px;
   border-radius: 10px;
-  -moz-user-select: -moz-none;
-  -khtml-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
 }
+
 .ws-row {
   line-height: 0;
 }
+
 .ws-col {
   cursor: pointer;
 }
+
 .ws-col.ws-selected {
   background: red;
 }
+
 .ws-found {
   background: yellow;
 }
+
 .ws-game-over-outer {
   background: rgba(0, 0, 0, 0.85);
   height: 100%;
@@ -72,27 +77,31 @@ h1 {
   top: 0;
   width: 100%;
 }
+
 .ws-game-over-inner {
-  width:100%;
-  height:100%;
-  padding:0;
-  margin:0;
-  display:table;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  display: table;
 }
+
 .ws-game-over {
-  display:table-cell;
-  vertical-align:middle;
+  display: table-cell;
+  vertical-align: middle;
 }
+
 .ws-game-over h2 {
-  color:#FFFFFF;
-  font-size:2em;
-  text-transform:uppercase;
-  padding:0;
-  margin:0 0 9px 0;
+  color: #FFFFFF;
+  font-size: 2em;
+  text-transform: uppercase;
+  padding: 0;
+  margin: 0 0 9px 0;
 }
+
 .ws-game-over p {
-  color:#FFFFFF;
-  font-size:1em;
-  padding:0;
-  margin:0;
+  color: #FFFFFF;
+  font-size: 1em;
+  padding: 0;
+  margin: 0;
 }

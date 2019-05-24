@@ -3,28 +3,23 @@
   <head>
     <meta charset="utf-8">
     <title>Word search game</title>
-    <link rel="stylesheet" href="style.css" /> 
+    <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <audio id="audio" src="https://www.fesliyanstudios.com/sp.php?i=/2892.mp3" ></audio>
-    <div class="wrap">
-      <h1 class="logo">Word search game</h1>
-      <section id="ws-area"></section>
-      <ul class="ws-words"></ul>
+    <div class="word-search-container">
+      <header><h1 class="title">Word search game</h1></header>
+      <section id="section"></section>
+      <ul class="hints"></ul>
     </div>
-    <script src="wordsearch.js"></script>
-    <script type="text/javascript">
-      var gameArea = document.getElementById('ws-area');
-      var gameobj = gameArea.wordSearchGame();
-      //Put words into `.ws-words`
-      var words = gameobj.settings.wordsList,
-        wordsWrap = document.querySelector('.ws-words');
-      for (i in words) {
-        var list_elements = document.createElement('li');
-        list_elements.setAttribute('class', 'ws-word');
-        list_elements.innerText = words[i];
-        wordsWrap.appendChild(list_elements);
-      }
+    <script src="js/wordsearch.js"></script>
+    <script src="js/game.js"></script>
+    <script id="game-over-message" type="text/html">
+      <div class='ws-game-over-inner' id='ws-game-over-inner'>
+      <div class='ws-game-over' id='ws-game-over'>
+      <h2>Congratulations!</h2>
+      <p>You've found all of the words!</p>
+      </div>
+      </div>
     </script>
   </body>
 </html>
