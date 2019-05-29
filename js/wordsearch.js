@@ -3,17 +3,18 @@
 
  // Initialize the application
   WordSearch.prototype.initialize = function() {
-    this.matrix     = [];                            // Letter matrix    
-    this.selectFrom = null;                         // Selection from
-    this.selected   = [];                          // Selected Letters
-    this.initmatrix(this.settings.gridSize);
+    this.matrix      = [];                            // Letter matrix
+    this.selectFrom  = null;                         // Selection from
+    this.currentWord = [];                          // currentWord
+    this.initmatrix(this.settings.gridSize,this.matrix);
   }
 
    /**
    * Fill default items into the matrix
-   * @param {Number} size Grid size
+   * @param {Number} Grid size
+   * @param {array} Grid matrix
    */
-  WordSearch.prototype.initmatrix = function(size) {
+  WordSearch.prototype.initmatrix = function(size,matrix) {
     for (var row = 0; row < size; row++) {
       for (var col = 0; col < size; col++) {
         var item = {
@@ -27,25 +28,58 @@
     }
   }
 
-  // Mouse event - Mouse down
-  WordSearch.prototype.onMousedown = function(item)  { return () => this.selectFrom = item; }
+  /**
+   * Word seach
+   * @param {Element} context gridSection of game
+   * @param {Array} settings
+   * @constructor
+   */
+  function WordSearch(context,settings) {
+    this.hintFound = 0;                                             // hint word found
+    this.defaultSettings = {                                        // Default settings
+      'directions'  : ['W', 'N', 'WN', 'EN'],
+      'gridSize'    : 10,
+      'words'       : ['one', 'two', 'three', 'four', 'five'],
+      'wordsList'   : [],
+      'fillLetters' : false
+    }
+    this.gridSection = context;
+    this.gridSection.classList.add('word-search');                      // Add `.word-search` to wrap element
+    this.settings = {...this.settings, ...this.defaultSettings};
+    // Check the words' length if it is overflow the grid
+    if (this.parseWords(this.settings.gridSize, this.settings.words.length)) {
+      var wordAddedWork = false;
+      while (!wordAddedWork) {
+        this.initialize();                                      // initialize the application
+        wordAddedWork = this.isValidDerection(this.settings);
+      }
+      if (!this.settings.fillLetters) this.loadMatrix(this.settings.gridSize,this.settings);   // Load Matrix
+      this.drawmatrix(this.gridSection,this.settings);                 // Draw the matrix into wrap element
+    }
+  }
 
-  // Mouse event - Mouse move
+  /**
+   * Mouse event - Mouse down
+   * @param {item} item
+   * @return {String}
+   */
+  WordSearch.prototype.onMousedown = function(item) {
+    return () => this.selectFrom = item; 
+  }
+
+  /**
+   * Mouse event - Mouse move
+   * @param {item} item
+   * @return {String}
+   */
   WordSearch.prototype.onMouseover = function(item) {
     return () => {
       if (this.selectFrom) {
-        this.selected = this.getItems(
-        this.selectFrom.row,
-        this.selectFrom.col,
-        item.row,
-        item.col
-        );
+        this.currentWord = this.getItems(this.selectFrom.row,this.selectFrom.col,item.row,item.col);
         this.reset();
-        this.selected.forEach(word => {
-          var current = word,
-            row = current.row + 1,
-            col = current.col + 1,
-            wordSelected = document.querySelector('.section .ws-row:nth-child(' + row + ') .ws-col:nth-child(' + col + ')');
+        this.currentWord.forEach(word => {
+          var current = Object.assign({}, word),
+            wordSelected = document.querySelector('.word-search .ws-row:nth-child(' + ++current.row + ') .ws-col:nth-child(' + ++current.col + ')');
           wordSelected.className += ' ws-selected';
         })
       }
@@ -56,74 +90,56 @@
   WordSearch.prototype.onMouseup = function() {
     return () => {
       this.selectFrom = null;
-      this.searched(this.selected);
-      this.selected = [];
+      this.searched(this.currentWord,this.settings);
+      this.currentWord = [];
       this.reset();
     }
   }
 
-  // Returns a random integer between min and max
-  if (typeof Math.rangeInt != 'function') {
-    Math.rangeInt = function(minAscii, maxAscii){
+  /**
+   * Returns a random integer between min and max
+   * @param {Number} Min Ascii Number
+   * @param {Number} Max Ascii Number
+   * @return {Number} random number
+   */
+    var rangeInt = function(minAscii, maxAscii){
       if (!maxAscii) {
         maxAscii = minAscii;
         minAscii = 0;
       }
       return Math.floor(Math.random() * (maxAscii - minAscii + 1)) + minAscii;
     }
-  }
-
-  // Word seach constructor
-  function WordSearch(context) {
-    this.solved = 0;                                             // Words solved.
-    this.settings = {                                           // Default settings
-      'directions'  : ['W', 'N', 'WN', 'EN'],
-      'gridSize'    : 10,
-      'words'       : ['one', 'two', 'three', 'four', 'five'],
-      'wordsList'   : [],
-      'fillLetters' : false
-    }
-    this.gridSection = context;
-    this.gridSection.classList.add('section');                      // Add `.section` to wrap element
-    // Check the words' length if it is overflow the grid
-    if (this.parseWords(this.settings.gridSize, this.settings.words.length)) {
-      var wordAddedWork = false;
-      while (!wordAddedWork) {
-        this.initialize();                                      // initialize the application
-        wordAddedWork = this.addWords();
-      }
-      if (!this.settings.fillLetters) this.fillLetters(this.settings.gridSize);   // Fill up the remaining blank items
-      this.drawmatrix(this.settings.gridSize);                 // Draw the matrix into wrap element
-    }
-  }
 
    /**
    * Parse words
    * @param {Number} Max size
-   * @param {String} words
+   * @param {Array} settings
    * @return {Boolean}
    */
-  WordSearch.prototype.parseWords = function(maxSize,words) {
+  WordSearch.prototype.parseWords = function(maxSize,settings) {
     var wordsParsed = true;
     for (var word = 0; word < this.settings.words.length; word++) {
       // Convert all the letters to upper case
       this.settings.wordsList[word] =  this.settings.words && this.settings.words[word].trim();
-      this.settings.words[word]     =  this.settings.wordsList[word] && this.settings.wordsList[word].trim().toUpperCase();
-      var matrixWord = this.settings.words[word];
-      if (matrixWord.length > maxSize) wordsParsed = false;
+      this.settings.words[word]     =  this.settings.wordsList[word] && this.settings.wordsList[word].toUpperCase();
+      if (this.settings.words[word].length > maxSize) wordsParsed = false;
     }
     return wordsParsed;
   }
 
-  // Put the words into the matrix   
-  WordSearch.prototype.addWords = function() {
+  /**
+   * Put the words into the matrix
+   * @param {Array} settings
+   * @return {Boolean}
+   */
+  WordSearch.prototype.isValidDerection = function(settings) {
     var wordAdded     = true,
         counter       = 0,
         wordAddedWork = true;
     while (wordAdded) {
       // Getting random direction
-      var direction     = this.settings.directions[Math.rangeInt(this.settings.directions.length - 1)],
-        directionResult = this.addWordDirections(this.settings.words[counter], direction),
+      var direction     = this.settings.directions[rangeInt(this.settings.directions.length - 1)],
+        directionResult = this.addWordDirections(this.settings.words[counter], direction,settings),
         wordAddedWork   = true;
       if (!directionResult) {
         wordAdded     = false;
@@ -139,9 +155,10 @@
    * Add word into the matrix
    * @param {String} word
    * @param {Number} direction
+   * @param {array} settings
    * @return {Boolean}
-   */ 
-  WordSearch.prototype.addWordDirections = function(word, direction) {
+   */
+  WordSearch.prototype.addWordDirections = function(word, direction,settings) {
     var worked = true,
       directions = {
         'W' : [0, 1],                               // Horizontal (From left to right)
@@ -149,26 +166,26 @@
         'WN': [1, 1],                               // From top left to bottom right
         'EN': [1, -1]                               // From top right to bottom left
       },
-      row, col; // y, x
+      row, col;
     switch (direction) {
       case 'W': // Horizontal (From left to right)
-        var row = Math.rangeInt(this.settings.gridSize  - 1),
-          col = Math.rangeInt(this.settings.gridSize - word.length);
+        var row = rangeInt(this.settings.gridSize  - 1),
+          col = rangeInt(this.settings.gridSize - word.length);
       break;
 
       case 'N': // Vertical (From top to bottom)
-        var row = Math.rangeInt(this.settings.gridSize - word.length),
-          col = Math.rangeInt(this.settings.gridSize  - 1);
+        var row = rangeInt(this.settings.gridSize - word.length),
+          col = rangeInt(this.settings.gridSize  - 1);
       break;
 
       case 'WN': // From top left to bottom right
-        var row = Math.rangeInt(this.settings.gridSize - word.length),
-          col = Math.rangeInt(this.settings.gridSize - word.length);
+        var row = rangeInt(this.settings.gridSize - word.length),
+          col = rangeInt(this.settings.gridSize - word.length);
       break;
 
       case 'EN': // From top right to bottom left
-        var row = Math.rangeInt(this.settings.gridSize - word.length),
-          col = Math.rangeInt(word.length - 1, this.settings.gridSize - 1);
+        var row = rangeInt(this.settings.gridSize - word.length),
+          col = rangeInt(word.length - 1, this.settings.gridSize - 1);
       break;
     }
     // Add words to the matrix
@@ -185,12 +202,13 @@
     }
     return worked;
   }
- 
+
   /**
    * Draw the matrix
-   * @param {Number} Grid size
+   * @param {Element} grid Matrix Section
+   * @param {Array} settings
    */
-  WordSearch.prototype.drawmatrix = function(gridSize) {
+  WordSearch.prototype.drawmatrix = function(gridSection,settings) {
     for (var row = 0; row < this.settings.gridSize; row++) {
       var wordGrid = document.createElement('div');
       wordGrid.setAttribute('class', 'ws-row');
@@ -219,14 +237,17 @@
   }
 
   /**
-   * Fill up the remaining letters in grid matrix
+   * Load the remaining letters in grid matrix
    * @param {Number} Grid size
+   * @param {Array} settings
    */
-  WordSearch.prototype.fillLetters = function(gridSize) {
+  WordSearch.prototype.loadMatrix = function(gridSize,settings) {
     for (var row = 0; row < this.settings.gridSize; row++) {
       for (var col = 0; col < this.settings.gridSize; col++) {
         // letters A to Z injected on grid matrix
-        if (this.matrix[row][col].letter === '.') this.matrix[row][col].letter = String.fromCharCode(Math.rangeInt(65, 90));
+        if (this.matrix[row][col].letter === '.') {
+          this.matrix[row][col].letter = String.fromCharCode(rangeInt(65, 90));
+        }
       }
     }
   }
@@ -256,60 +277,70 @@
     return items;
   }
 
-  // Returns matrix item
-  WordSearch.prototype.getItem = function(row, col) {return (this.matrix[row] ? this.matrix[row][col] : undefined);}
+  /**
+   * Returns matrix item
+   * @param {Number} row number
+   * @param {Number} col number
+   * @return {array}
+   */
+  WordSearch.prototype.getItem = function(row, col) {
+    return this.matrix[row] && this.matrix[row][col];
+  };
 
-  // Clear the exist highlights of selectd letters
+  // Reset the selected Word 
   WordSearch.prototype.reset = function() {
-    var selectedLetters = document.querySelectorAll('.ws-selected');
-      selectedLetters.forEach(selectedLetter => {
-      selectedLetter.classList.remove('ws-selected');
+    var selectedWord = document.querySelectorAll('.ws-selected');
+      selectedWord && selectedWord.forEach(word => {
+      word.classList.remove('ws-selected');
     })
   }
 
   /**
    * Check selected word is present in search wordlist
    * @param {Array} selected
+   * @param {Array} settings
    */
-  WordSearch.prototype.searched = function(selected) {
-    var words = [''];
-    selected.forEach(word => {
-        words[0] += word.letter;
+  WordSearch.prototype.searched = function(currentWord,settings) {
+    var words = "";
+    currentWord.forEach(word => {
+        words += word.letter;
     })
-    words.push(words[0].split('').reverse().join(''));
-    if (this.settings.words.indexOf(words[0]) > -1 ||
-        this.settings.words.indexOf(words[1]) > -1) {
-        selected.forEach(selectedWord => {
-          var row = selectedWord.row + 1,
-            col   = selectedWord.col + 1,
-          wordFound = document.querySelector('.section .ws-row:nth-child(' + row + ') .ws-col:nth-child(' + col + ')');
+    var reverseWord=words.split('').reverse().join('');
+    if (this.settings.words.indexOf(words) > -1 ||
+        this.settings.words.indexOf(reverseWord) > -1) {
+        currentWord.forEach(letter => {
+          var current = Object.assign({},letter),
+          wordFound = document.querySelector('.word-search .ws-row:nth-child(' + ++current.row + ') .ws-col:nth-child(' + ++current.col + ')');
           wordFound.classList.add('ws-found');
         })
+
       // Cross word off list.
-      var wordList = document.querySelector(".hints");
-      var wordListItems = wordList.getElementsByTagName("li");
-      for(var wordListItem = 0; wordListItem < wordListItems.length; wordListItem++){
-        if(words[0] === wordListItems[wordListItem].innerHTML.toUpperCase()){
-          if(wordListItems[wordListItem].innerHTML != "<del>"+wordListItems[wordListItem].innerHTML+"</del>") { // Check the word is never found
-            wordListItems[wordListItem].innerHTML = "<del>"+wordListItems[wordListItem].innerHTML+"</del>";
-            this.solved++;                                      // Increment solved words.
+      var hintsList = document.querySelector(".hints");
+      var hintsListItems = hintsList.getElementsByTagName("li");
+      for(var hintsListItem = 0; hintsListItem < hintsListItems.length; hintsListItem++){
+        if(words === hintsListItems[hintsListItem].innerHTML.toUpperCase()){
+          if(hintsListItems[hintsListItem].innerHTML != "<del>"+hintsListItems[hintsListItem].innerHTML+"</del>") { // Check the word is never found
+            hintsListItems[hintsListItem].innerHTML = "<del>"+hintsListItems[hintsListItem].innerHTML+"</del>";
+            this.hintFound++;                                       // Increment hintFound.
           }
         }
       }
-      // Game over?
-      if(this.solved === this.settings.words.length){
-        var gameOverMessage = document.createElement("div");
-        gameOverMessage.setAttribute("id", "ws-game-over-outer");
-        gameOverMessage.setAttribute("class", "ws-game-over-outer");
-        this.gridSection.parentNode.appendChild(gameOverMessage);
-        var gameOverMessage = document.getElementById("ws-game-over-outer");                // Create gameOverMessage content.
-        gameOverMessage.innerHTML = document.getElementById("game-over-message").innerHTML;
+
+      // Game over
+      if(this.hintFound === this.settings.words.length){
+        var statusElem = document.createElement("div");
+        statusElem.setAttribute("id", "ws-game-over-outer");
+        statusElem.setAttribute("class", "ws-game-over-outer");
+        this.gridSection.parentNode.appendChild(statusElem);
+        statusElem = document.getElementById("ws-game-over-outer");                // Create statusElem content.
+        var gameOverElem = document.getElementById("game-over-message")           // Show Game Over Message.
+        statusElem.innerHTML = gameOverElem && gameOverElem.innerHTML;
       }
     }
   }
 
   // Extend the element method
-  Element.prototype.wordSearchGame = function() {
-    return new WordSearch(this);
+  Element.prototype.wordSearchGame = function(settings) {
+    return new WordSearch(this, settings);
   }
 })();

@@ -2,11 +2,7 @@
 body, h1 {
   margin: 0;
   padding: 0;
-  color: #333;
-  -moz-user-select: -moz-none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  -moz-outline-style: none;
+  color: #333;  
 }
 
 h1 {
@@ -20,14 +16,17 @@ h1 {
   padding: 40px 0;
   text-align: center;
   position: relative;
-  outline: 0;
+  -moz-user-select: -moz-none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-outline-style: none;
 }
 
 .title, #gameArea {
   margin-bottom: 40px;
 }
 
-.section, .hints {
+.word-search, .hints {
   display: inline-block;
   vertical-align: top;
 }
@@ -46,11 +45,19 @@ h1 {
 }
 
 /* Wordsearch */
-.section {
+.word-search {
   background: #fafafa;
   display: inline-block;
   padding: 20px;
   border-radius: 10px;
+}
+.letter{
+  vertical-align: middle;
+  font-size: 28px;
+  font-family: Calibri;
+  text-align: center;
+  color: #333;
+  font-weight: 400;
 }
 
 .ws-row {
