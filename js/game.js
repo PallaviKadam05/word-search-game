@@ -1,6 +1,6 @@
 (function(){
   var wordSearch = document.getElementById('word-search');
-  var game  = wordSearch && wordSearch.wordSearchGame(this.settings);
+  var game  = wordSearch && wordSearch.wordSearchGame();
   var words = game.settings.wordsList,
     hints = document.querySelector('.hints');
   words.forEach( word => {
