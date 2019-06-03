@@ -54,22 +54,6 @@ section:focus {
   text-transform: capitalize;
 }
 
-/* Wordsearch */
-.word-search {
-  background: #fafafa;
-  display: inline-block;
-  padding: 20px;
-  border-radius: 10px;
-}
-
-.ws-row {
-  line-height: 0;
-}
-
-.ws-col {
-  cursor: pointer;
-}
-
 .ws-col.ws-selected {
   background: #F00;
 }
